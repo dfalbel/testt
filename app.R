@@ -4,7 +4,8 @@ library(minhub)
 library(magrittr)
 source("model-session.R")
 
-repo <- "stabilityai/stablelm-tuned-alpha-3b"
+#repo <- "stabilityai/stablelm-tuned-alpha-3b"
+repo <- "EleutherAI/pythia-70m"
 sess <- model_session$new()
 model_loaded <- sess$load_model(repo)
 
@@ -86,19 +87,14 @@ server <- function(input, output, session) {
   # Observer used at app startup time to allow using the 'Send' button once the
   # model has been loaded.
   observe({
-    ready <- sess$sess$poll_process(1) == "ready"
-    send <- isolate(input$send)
-    
-    if (send == 0 && !ready) {
-      invalidateLater(1000, session)  
-    }
-  
-    if (ready) {
-      shinyjs::enable("send")
-      updateActionButton(inputId = "send", label = "Send")
-    } else {
-      shinyjs::disable("send")
-    }
+    model_loaded %>% 
+      promises::then(onFulfilled = function(x) {
+        shinyjs::enable("send")
+        updateActionButton(inputId = "send", label = "Send")
+      }, onRejected = function(x) {
+        shinyjs::disable("send")
+        insert_message(paste0("😭 Error loading the model:\n", as.character(x)))
+      })
   })
 }
 
