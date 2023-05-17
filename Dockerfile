@@ -25,6 +25,6 @@ RUN installGithub.r \
     mlverse/minhub
 
 
-ENV HUGGINGFACE_HUB_CACHE="/home/cache/"
+ENV HUGGINGFACE_HUB_CACHE="/tmp/"
 COPY . .
 CMD ["R", "--quiet", "-e", "shiny::runApp(host='0.0.0.0', port=7860)"]
