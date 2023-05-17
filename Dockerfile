@@ -7,10 +7,15 @@ RUN install2.r --error \
     ggExtra \
     shiny
 
+# Install Rust for tok
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
 # Install development packages from GitHub
+ENV TORCH_INSTALL=1 
 RUN installGithub.r \
     rstudio/bslib \
-    rstudio/httpuv
+    rstudio/httpuv \
+    mlverse/minhub
 
 COPY . .
 
