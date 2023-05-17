@@ -11,7 +11,7 @@ RUN install2.r --error \
 
 RUN apt-get -y update && \
   apt-get -y install curl && \
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -y
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Install development packages from GitHub
 ENV TORCH_INSTALL=1 
