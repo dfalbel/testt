@@ -2,8 +2,10 @@ library(shiny)
 library(bslib)
 library(dplyr)
 library(ggplot2)
+library(minhub)
 
-df <- readr::read_csv("penguins.csv")
+model <- gptneox()
+
 # Find subset of columns that are suitable for scatter plot
 df_num <- df |> select(where(is.numeric), -Year)
 
