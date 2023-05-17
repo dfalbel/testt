@@ -44,7 +44,7 @@ server <- function(input, output, session) {
       return()
     }
     shinyjs::disable("send")
-    updateActionButton(inputId = "send", label = "Waiting for model")
+    updateActionButton(inputId = "send", label = "Waiting for model...")
     insert_message(as.character(glue::glue("🤗: {input$prompt}")))  
     
     # we modify the prompt to trigger the 'next_token' reactive
@@ -53,13 +53,21 @@ server <- function(input, output, session) {
   
   next_token <- eventReactive(prompt(), ignoreInit = TRUE, {
     prompt() %>% 
-      sess$generate()
+      sess$generate() %>% 
+      promises::then(
+        onFulfilled = function(x) {x},
+        onRejected = function(x) {
+          insert_message(paste0("😭 Error generating token.", as.character(x)))
+          updateActionButton(inputId = "send", label = "Failing generation. Contact admin.")
+          NULL
+        }
+      )
   })
   
   observeEvent(next_token(), {
     tok <- next_token()
-    n_tokens(n_tokens() + 1)
     
+    n_tokens(n_tokens() + 1)
     tok %>% promises::then(function(tok) {
       if (n_tokens() == 1) {
         insert_message(paste0("🤖: ", tok), append = FALSE)
@@ -87,14 +95,21 @@ server <- function(input, output, session) {
   # Observer used at app startup time to allow using the 'Send' button once the
   # model has been loaded.
   observe({
+    if (sess$is_loaded) return()
+    cat("Loading model:",sess$sess$poll_process(), "\n")
+    invalidateLater(1000, session)
+    
     model_loaded %>% 
       promises::then(onFulfilled = function(x) {
         shinyjs::enable("send")
         updateActionButton(inputId = "send", label = "Send")
+        sess$is_loaded <- TRUE
       }, onRejected = function(x) {
         shinyjs::disable("send")
         insert_message(paste0("😭 Error loading the model:\n", as.character(x)))
       })
+    
+    NULL # we return NULL so we don't stuck waiting for the above.
   })
 }
 

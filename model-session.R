@@ -9,6 +9,7 @@ model_session <- R6::R6Class(
       self$sess <- promise_session$new()
       self$temperature <- 1
       self$top_k <- 50
+      self$is_loaded <- FALSE
     },
     load_model = function(repo) {
       self$sess$call(args = list(repo = repo), function(repo) {

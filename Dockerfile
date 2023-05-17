@@ -25,6 +25,6 @@ RUN installGithub.r \
     mlverse/minhub
 
 
+ENV HF_HOME="./cache/"
 COPY . .
-
 CMD ["R", "--quiet", "-e", "shiny::runApp(host='0.0.0.0', port=7860)"]
