@@ -8,13 +8,19 @@ RUN install2.r --error \
     shiny
 
 # Install Rust for tok
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+RUN apt-get -y update && \
+  apt-get -y install curl && \
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Install development packages from GitHub
 ENV TORCH_INSTALL=1 
 RUN installGithub.r \
     rstudio/bslib \
     rstudio/httpuv \
+    mlverse/tok
+    
+RUN installGithub.r \
     mlverse/minhub
 
 COPY . .
