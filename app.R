@@ -1,6 +1,7 @@
 library(shiny)
 library(bslib)
 library(minhub)
+library(magrittr)
 source("model-session.R")
 
 repo <- "stabilityai/stablelm-tuned-alpha-3b"
