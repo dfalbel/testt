@@ -36,6 +36,7 @@ promise_session <- R6::R6Class(
       self$sess$call(task$func, args = task$args)
     },
     resolve_task = function() {
+      cat("Resolving task! ")
       out <- self$sess$read()
       if (!is.null(out$error)) {
         self$tasks[[1]]$reject(out$error)
@@ -44,6 +45,8 @@ promise_session <- R6::R6Class(
       }
       
       self$tasks <- self$tasks[-1]
+      cat("now we have ", length(self$tasks), "on queue\n")
+      
       self$is_running <- FALSE
       
       self$run_task()

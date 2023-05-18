@@ -36,6 +36,7 @@ ui <- page_fillable(
 server <- function(input, output, session) {
   prompt <- reactiveVal(value = system_prompt)
   n_tokens <- reactiveVal(value = 0)
+  msg_id <- reactiveVal(value = 0)
   
   observeEvent(input$send, {
     if (is.null(input$prompt) || input$prompt == "") {
@@ -43,7 +44,7 @@ server <- function(input, output, session) {
     }
     shinyjs::disable("send")
     updateActionButton(inputId = "send", label = "Waiting for model...")
-    insert_message(as.character(glue::glue("🤗: {input$prompt}")))  
+    insert_message(msg_id, as.character(glue::glue("🤗: {input$prompt}")))  
     
     # we modify the prompt to trigger the 'next_token' reactive
     prompt(paste0(prompt(), "<|USER|>", input$prompt, "<|ASSISTANT|>")) 
@@ -55,7 +56,7 @@ server <- function(input, output, session) {
       promises::then(
         onFulfilled = function(x) {x},
         onRejected = function(x) {
-          insert_message(paste0("😭 Error generating token.", as.character(x)))
+          insert_message(msg_id, paste0("😭 Error generating token.", as.character(x)))
           updateActionButton(inputId = "send", label = "Failing generation. Contact admin.")
           NULL
         }
@@ -68,9 +69,9 @@ server <- function(input, output, session) {
     n_tokens(n_tokens() + 1)
     tok %>% promises::then(function(tok) {
       if (n_tokens() == 1) {
-        insert_message(paste0("🤖: ", tok), append = FALSE)
+        insert_message(msg_id, paste0("🤖: ", tok), append = FALSE)
       } else {
-        insert_message(tok, append = TRUE)
+        insert_message(msg_id, tok, append = TRUE)
       }
       
       if (tok != "" && n_tokens() < max_n_tokens) {
@@ -92,50 +93,75 @@ server <- function(input, output, session) {
   
   # Observer used at app startup time to allow using the 'Send' button once the
   # model has been loaded.
-  observe({
+  model_loaded <- reactiveVal()
+  event_reload <- reactiveVal(val = 0)
+  observeEvent(event_reload(), ignoreNULL=FALSE, {
+    
+    # the model is already loaded, nothing to do
     if (!is.null(sess$is_loaded) && sess$is_loaded) return()
+    
+    # the model isn't loaded, this we disable the send button and
+    # show that we are loading the model
+    shinyjs::disable("send")
+    updateActionButton(inputId = "send", label = "Loading the model...")
+    
+    # the model isn't loaded and no task is trying to load it, so we start a new
+    # task to load it
     if (is.null(sess$is_loaded)) {
       cat("Started loading model ....", "\n")
-      model_loaded <- sess$load_model(repo)
+      model_loaded(sess$load_model(repo))
       sess$is_loaded <- FALSE # not yet loaded, but loading
     }
     
+    # this runs for the cases where sess$is_loaded was NULL or if 
+    # sess$is_loaded = FALSE ie (another connection already tried)
+    # to load the model.
+    
     cat("Loading model:",sess$sess$poll_process(), "\n")
-    invalidateLater(5000, session)
-    model_loaded <- model_loaded %>% 
+    m <- model_loaded() %>% 
       promises::then(onFulfilled = function(x) {
+        cat("Model has been loaded!", "\n")
         shinyjs::enable("send")
         updateActionButton(inputId = "send", label = "Send")
         sess$is_loaded <- TRUE
+        TRUE
       }, onRejected = function(x) {
         shinyjs::disable("send")
         insert_message(paste0("😭 Error loading the model:\n", as.character(x)))
         sess$is_loaded <- NULL # means failure!
         sess$sess <- NULL
+        if (event_reload() < 10) {
+          Sys.sleep(5)
+          event_reload(event_reload() + 1)
+        }
+        FALSE
       })
-    
-    NULL # we return NULL so we don't stuck waiting for the above.
+    model_loaded(m)
   })
 }
 
-message_id <- 0
-insert_message <- function(msg, append = FALSE) {
+insert_message <- function(message_id, msg, append = FALSE) {
   if (!append) {
-    id <- message_id <<- message_id + 1
+    id <- message_id() + 1
+    message_id(id)
+    
     insertUI(
       "#messages", 
       "beforeEnd", 
       immediate = TRUE,
-      ui = card(card_body(p(id = paste0("msg-",id), msg)), style="margin-bottom:5px;")
+      ui = card(style="margin-bottom:5px;", card_body(
+        p(id = paste0("msg-",id), msg)
+      ))
     )
   } else {
-    id <- message_id
+    id <- message_id()
     shinyjs::runjs(glue::glue(
       "document.getElementById('msg-{id}').textContent += '{msg}'"
     ))
   }
   # scroll to bottom
   shinyjs::runjs("var elem = document.getElementById('messages'); elem.scrollTop = elem.scrollHeight;")
+  id
 }
 
 
