@@ -29,7 +29,7 @@ ui <- page_fillable(
   layout_column_wrap(
     width = 1/2,
     textInput("prompt", label = NULL, width="100%"),
-    actionButton("send", "Loading model...", width = "100%")
+    actionButton("send", "Send", width = "100%")
   )
 )
 
@@ -83,6 +83,13 @@ server <- function(input, output, session) {
     })
   })
   
+  observe({
+    # an observer that makes sure tasks are resolved during the shiny loop
+    invalidateLater(5000, session)
+    if (!is.null(sess$sess))
+      sess$sess$poll_process(1)
+  })
+  
   # Observer used at app startup time to allow using the 'Send' button once the
   # model has been loaded.
   observe({
@@ -90,6 +97,7 @@ server <- function(input, output, session) {
     if (is.null(sess$is_loaded)) {
       cat("Started loading model ....", "\n")
       model_loaded <- sess$load_model(repo)
+      sess$is_loaded <- FALSE # not yet loaded, but loading
     }
     
     cat("Loading model:",sess$sess$poll_process(), "\n")
