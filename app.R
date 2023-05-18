@@ -85,13 +85,6 @@ server <- function(input, output, session) {
     })
   })
   
-  # we need this observer to make sure that during the event loop the
-  # tasks are resolved.
-  observe({
-    invalidateLater(5000, session)
-    sess$sess$poll_process(1)
-  })
-  
   # Observer used at app startup time to allow using the 'Send' button once the
   # model has been loaded.
   observe({
