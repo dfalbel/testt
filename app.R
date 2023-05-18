@@ -7,7 +7,6 @@ source("model-session.R")
 #repo <- "stabilityai/stablelm-tuned-alpha-3b"
 repo <- "EleutherAI/pythia-70m"
 sess <- model_session$new()
-model_loaded <- sess$load_model(repo)
 
 max_n_tokens <- 100
 system_prompt = "<|SYSTEM|># StableLM Tuned (Alpha version)
@@ -35,6 +34,7 @@ ui <- page_fillable(
 )
 
 server <- function(input, output, session) {
+  model_loaded <- sess$load_model(repo)
   
   prompt <- reactiveVal(value = system_prompt)
   n_tokens <- reactiveVal(value = 0)

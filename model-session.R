@@ -6,12 +6,17 @@ model_session <- R6::R6Class(
   lock_objects = FALSE,
   public = list(
     initialize = function() {
-      self$sess <- promise_session$new()
+      self$sess <- NULL
       self$temperature <- 1
       self$top_k <- 50
       self$is_loaded <- FALSE
     },
     load_model = function(repo) {
+      if (!is.null(self$sess)) {
+        cat("Model is already loaded.", "\n")
+        return(self$sess$call(function() "done"))
+      }
+      self$sess <- promise_session$new()
       self$sess$call(args = list(repo = repo), function(repo) {
         library(torch)
         library(zeallot)
