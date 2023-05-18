@@ -29,6 +29,10 @@ model_session <- R6::R6Class(
       })
     },
     generate = function(prompt) {
+      if (is.null(self$sess)) {
+        cat("Model is not loaded, error.", "\n")
+        return(self$sess$call(function() stop("Model is not loaded")))
+      }
       args <- list(
         prompt = prompt, 
         temperature = self$temperature,
