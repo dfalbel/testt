@@ -95,7 +95,7 @@ server <- function(input, output, session) {
   # Observer used at app startup time to allow using the 'Send' button once the
   # model has been loaded.
   observe({
-    if (is.null(self$is_loaded) || sess$is_loaded) return()
+    if (is.null(sess$is_loaded) || sess$is_loaded) return()
     cat("Loading model:",sess$sess$poll_process(), "\n")
     invalidateLater(1000, session)
     
@@ -107,7 +107,7 @@ server <- function(input, output, session) {
       }, onRejected = function(x) {
         shinyjs::disable("send")
         insert_message(paste0("😭 Error loading the model:\n", as.character(x)))
-        self$is_loaded <- NULL # means failure!
+        sess$is_loaded <- NULL # means failure!
       })
     
     NULL # we return NULL so we don't stuck waiting for the above.
