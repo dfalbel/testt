@@ -4,8 +4,8 @@ library(minhub)
 library(magrittr)
 source("model-session.R")
 
-#repo <- "stabilityai/stablelm-tuned-alpha-3b"
-repo <- "EleutherAI/pythia-70m"
+repo <- "stabilityai/stablelm-tuned-alpha-3b"
+#repo <- "EleutherAI/pythia-70m"
 sess <- model_session$new()
 
 max_n_tokens <- 100
