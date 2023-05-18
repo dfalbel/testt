@@ -21,6 +21,18 @@ RUN installGithub.r \
     rstudio/httpuv \
     mlverse/tok
     
+
+RUN Rscript -e "\
+options(timeout = 600);\
+kind <- 'cpu';\
+version <- '0.10.0.9000';\
+options(repos = c(\
+  torch = sprintf('https://storage.googleapis.com/torch-lantern-builds/packages/%s/%s/', kind, version),\
+  CRAN = 'https://cloud.r-project.org'\
+));\
+install.packages('torch');\
+"
+
 RUN installGithub.r \
     mlverse/minhub
 
