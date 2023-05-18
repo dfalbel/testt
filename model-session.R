@@ -9,7 +9,7 @@ model_session <- R6::R6Class(
       self$sess <- NULL
       self$temperature <- 1
       self$top_k <- 50
-      self$is_loaded <- FALSE
+      self$is_loaded <- NULL
     },
     load_model = function(repo) {
       if (!is.null(self$sess)) {

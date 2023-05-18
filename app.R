@@ -34,8 +34,6 @@ ui <- page_fillable(
 )
 
 server <- function(input, output, session) {
-  model_loaded <- sess$load_model(repo)
-  
   prompt <- reactiveVal(value = system_prompt)
   n_tokens <- reactiveVal(value = 0)
   
@@ -88,11 +86,15 @@ server <- function(input, output, session) {
   # Observer used at app startup time to allow using the 'Send' button once the
   # model has been loaded.
   observe({
-    if (is.null(sess$is_loaded) || sess$is_loaded) return()
-    cat("Loading model:",sess$sess$poll_process(), "\n")
-    invalidateLater(1000, session)
+    if (!is.null(sess$is_loaded) && sess$is_loaded) return()
+    if (is.null(sess$is_loaded)) {
+      cat("Started loading model ....", "\n")
+      model_loaded <- sess$load_model(repo)
+    }
     
-    model_loaded %>% 
+    cat("Loading model:",sess$sess$poll_process(), "\n")
+    invalidateLater(5000, session)
+    model_loaded <- model_loaded %>% 
       promises::then(onFulfilled = function(x) {
         shinyjs::enable("send")
         updateActionButton(inputId = "send", label = "Send")
@@ -101,6 +103,7 @@ server <- function(input, output, session) {
         shinyjs::disable("send")
         insert_message(paste0("😭 Error loading the model:\n", as.character(x)))
         sess$is_loaded <- NULL # means failure!
+        sess$sess <- NULL
       })
     
     NULL # we return NULL so we don't stuck waiting for the above.
